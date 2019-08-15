@@ -28,19 +28,21 @@ from keras.optimizers import SGD
 from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 
-#change to current OS
-operatingSystem = 'windows'
 
-if operatingSystem == 'linux':
+def load_file(filepath):
+    dataframe = pd.read_csv(filepath, header=None, delim_whitespace=True)
+    return dataframe.values
+
+
+# change to current OS
+operatingSystem = 'macOS'
+
+if operatingSystem is 'linux' or 'macOS':
     inputsPath = '/data/inputs/'
     targetsPath = '/data/targets/'
 else:
     inputsPath = '\\data\\inputs\\'
     targetsPath = '\\data\\targets\\'
-
-def load_file(filepath):
-	dataframe = pd.read_csv(filepath, header=None, delim_whitespace=True)
-	return dataframe.values
 
 # load a list of files into a 3D array of [samples, timesteps, features]
 xLoaded = list()
@@ -56,15 +58,16 @@ for root, dirs, files in os.walk('.' + inputsPath):
         yLoaded.append(yData)
 
 # stack group so that features are the 3rd dimension
-X = np.stack(xLoaded, axis = 0) 
+X = np.stack(xLoaded, axis=0)
 # Y is simply an array of data
 Y = yLoaded
 
-#Use to check the balance of classes in the data
+# use to check the balance of classes in the data
 ones = 0
 for event in Y:
+    print(event)
     if event == 1:
-        ones+=1
+        ones += 1
 
 print(((ones/len(Y))*100), "%")
 
@@ -73,12 +76,12 @@ Y = np.array(Y)
 Y = to_categorical(Y)
 Y = Y.reshape(-1, 2)
 
-xShuffle, yShuffle = shuffle(X, Y, random_state = 2)
+xShuffle, yShuffle = shuffle(X, Y, random_state=2)
 
 print(X.shape)
 print(Y.shape)
 
-xTrain, xTest, yTrain, yTest = train_test_split(xShuffle, yShuffle, test_size = 0.2)
+xTrain, xTest, yTrain, yTest = train_test_split(xShuffle, yShuffle, test_size=0.2)
 
 print("Data Ready")
 
@@ -116,20 +119,21 @@ model.add(Dropout(0.3))
 
 model.add(Dense(2, activation='softmax'))
 
-sgd = SGD(lr = 0.01, decay = 1e-6, momentum = 0.9, nesterov = True)
+sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
-es = EarlyStopping(monitor = 'val_acc', mode = 'max', patience = 5, verbose = 1, restore_best_weights = True)
+es = EarlyStopping(monitor='val_acc', mode='max', patience=5, verbose=1, restore_best_weights=True)
 
-history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split = 0.1, callbacks=[es])
+history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1,
+                    callbacks=[es])
 _, accuracy = model.evaluate(xTest, yTest, batch_size=batch_size, verbose=0)
 yPred = model.predict(xTest)
 
-#Calculate accuracy as a percentage
+# calculate accuracy as a percentage
 accuracy = accuracy * 100.0
 print('Accuracy =', accuracy, "%")
 
-#Generate confusion matrix
+# generate confusion matrix
 matrix = confusion_matrix(yTest.argmax(axis=1), yPred.argmax(axis=1))
 print('Confusion Matrix:')
 print(np.matrix(matrix))
@@ -139,21 +143,21 @@ tp, fn, fp, tn = matrix.ravel()
 dprime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
 print('dPrime =', dprime)
 
-#Generate classification report
+# generate classification report
 target_names = ['non-apnea', 'apnea']
 print('Classification Report:')
 print(classification_report(yTest.argmax(axis=1), yPred.argmax(axis=1), target_names=target_names))
 
-#Access the accuracy and loss values found throughout training
+# access the accuracy and loss values found throughout training
 acc = history.history['acc']
 val_acc = history.history['val_acc']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
-#d = history.history[dPrime]
+# d = history.history[dPrime]
 
 epochs = range(1, len(acc) + 1)
 
-#Plot accuracy throughout training
+# plot accuracy throughout training
 plt.plot(epochs, acc, 'b')
 plt.plot(epochs, val_acc, 'g')
 plt.title('Accuracy')
@@ -162,7 +166,7 @@ plt.ylabel('Accuracy')
 plt.legend(['Training', 'Validation'], loc='upper left')
 plt.figure()
 
-#Plot loss throughout training
+# plot loss throughout training
 plt.plot(epochs, loss, 'b')
 plt.plot(epochs, val_loss, 'g')
 plt.title('Loss')
@@ -177,6 +181,6 @@ plt.show()
 # plt.ylabel('d prime')
 # plt.show()
 
-#Save the model. Change the name depending on the date/model
+# save the model. Change the name depending on the date/model
 model.save('model.h5')
 print('Model Saved')

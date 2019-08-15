@@ -22,7 +22,7 @@ else:
     
 recordList = wfdb.get_record_list('slpdb')
 apneaLabels = np.array(['H', 'HA','OA', 'CA', 'CAA', 'X'])
-#Removed Hypopneas to test: 'H', 'HA', 
+# removed Hypopneas to test: 'H', 'HA',
 
 for recordNumber, record in enumerate(recordList):
 
@@ -54,16 +54,15 @@ for recordNumber, record in enumerate(recordList):
 
     # write each epoch to a csv file, named by record number and epoch number
     trimmedNumberEpochs = len(actualPSignal)/7500
-    print(trimmedNumberEpochs)
     epochs = np.split(actualPSignal, trimmedNumberEpochs)
 
     for epochNumber, epoch in enumerate(epochs):
         # save input and output arrays as csv files
-        with open(os.getcwd() + inputsPath + str(recordNumber) + '_' + str(epochNumber) + '.csv', 'w') as filehandler:
+        with open(os.getcwd() + inputsPath + str(recordNumber+1) + '_' + str(epochNumber+1) + '.csv', 'w') as filehandler:
             csvWriter = csv.writer(filehandler, delimiter=' ')
             csvWriter.writerows(epoch) 
 
             # write target values to csv files, named by record number and epoch number
-        with open(os.getcwd() + targetsPath + str(recordNumber) + '_' + str(epochNumber) + ".csv", "w") as filehandler:
+        with open(os.getcwd() + targetsPath + str(recordNumber+1) + '_' + str(epochNumber+1) + ".csv", "w") as filehandler:
             csvWriter = csv.writer(filehandler, delimiter=' ')
-            csvWriter.writerow(str(annsamp.aux_note[epochNumber-1]))
+            csvWriter.writerow(str(annsamp.aux_note[epochNumber]))
