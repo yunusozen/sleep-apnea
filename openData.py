@@ -22,7 +22,8 @@ else:
     targetsPath = "\\data\\targets\\"
     
 recordList = wfdb.get_record_list('slpdb')
-apneaLabels = np.array(['H', 'HA', 'OA', 'CA', 'CAA', 'X'])
+apneaLabels = np.array(['H', 'HA','OA', 'CA', 'CAA', 'X'])
+#Removed Hypopneas to test: 'H', 'HA', 
 
 inputArray = np.empty((0,1))
 outputArray = np.empty((0,1))

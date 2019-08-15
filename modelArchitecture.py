@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import sklearn
 import keras
-import keras.backend as k
+import keras.backend as K
 import seaborn as sn
 import matplotlib.pyplot as plt
 import h5py
@@ -24,6 +24,7 @@ from keras.layers import Activation
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.layers.normalization import BatchNormalization
+from keras.optimizers import SGD
 from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 
@@ -81,42 +82,44 @@ xTrain, xTest, yTrain, yTest = train_test_split(xShuffle, yShuffle, test_size = 
 
 print("Data Ready")
 
-def dPrime(y_true, y_pred):
-    matrix = confusion_matrix(y_true.argmax(axis=1), y_pred.argmax(axis=1))
-    tp, fn, fp, tn = matrix.ravel()
-    dPrime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
-    return dPrime
+# def dPrime(y_true, y_pred):
+#     matrix = confusion_matrix(y_true.argmax(axis=1), y_pred.argmax(axis=1))
+#     tp, fn, fp, tn = matrix.ravel()
+#     dPrime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
+#     return K.constant(dPrime)
 
-verbose, epochs, batch_size = 1, 100, 32
+verbose, epochs, batch_size = 1, 30, 32
 #CNN layers
 model = Sequential()
 
-model.add(Conv1D(filters=20, kernel_size=250, input_shape=(7500,1)))
-model.add(BatchNormalization())
-model.add(Activation('elu'))
-model.add(MaxPooling1D(pool_size=10))
-model.add(Dropout(0.5))
-
-model.add(Conv1D(filters=40, kernel_size=75))
+model.add(Conv1D(filters=20, kernel_size=125, input_shape=(7500,1)))
 model.add(BatchNormalization())
 model.add(Activation('elu'))
 model.add(MaxPooling1D(pool_size=5))
-model.add(Dropout(0.5))
+model.add(Dropout(0.3))
+
+model.add(Conv1D(filters=40, kernel_size=50))
+model.add(BatchNormalization())
+model.add(Activation('elu'))
+model.add(MaxPooling1D(pool_size=5))
+model.add(Dropout(0.3))
 
 model.add(Conv1D(filters=60, kernel_size=10))
 model.add(BatchNormalization())
 model.add(Activation('elu'))
 model.add(MaxPooling1D(pool_size=5))
-model.add(Dropout(0.5))
+model.add(Dropout(0.3))
 
 model.add(Flatten())
-model.add(Dense(15, activation='elu')) 
-model.add(Dropout(0.5))
+model.add(Dense(25, activation='elu')) 
+model.add(Dropout(0.3))
 
 model.add(Dense(2, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', dPrime])
 
-es = EarlyStopping(monitor = 'val_acc', mode = 'max', patience = 2, verbose = 1, restore_best_weights = True)
+sgd = SGD(lr = 0.01, decay = 1e-6, momentum = 0.9, nesterov = True)
+model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
+es = EarlyStopping(monitor = 'val_acc', mode = 'max', patience = 5, verbose = 1, restore_best_weights = True)
 
 history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split = 0.1, callbacks=[es])
 _, accuracy = model.evaluate(xTest, yTest, batch_size=batch_size, verbose=0)
@@ -131,7 +134,7 @@ matrix = confusion_matrix(yTest.argmax(axis=1), yPred.argmax(axis=1))
 print('Confusion Matrix:')
 print(np.matrix(matrix))
 
-#Calculate d' from testing
+# Calculate d' from testing
 tp, fn, fp, tn = matrix.ravel()
 dprime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
 print('dPrime =', dprime)
@@ -141,25 +144,39 @@ target_names = ['non-apnea', 'apnea']
 print('Classification Report:')
 print(classification_report(yTest.argmax(axis=1), yPred.argmax(axis=1), target_names=target_names))
 
+#Access the accuracy and loss values found throughout training
 acc = history.history['acc']
+val_acc = history.history['val_acc']
 loss = history.history['loss']
+val_loss = history.history['val_loss']
+#d = history.history[dPrime]
 
 epochs = range(1, len(acc) + 1)
 
-plt.plot(epochs, acc, 'bo')
-plt.title('Training accuracy')
-plt.xlabel('Training Epochs')
+#Plot accuracy throughout training
+plt.plot(epochs, acc, 'b')
+plt.plot(epochs, val_acc, 'g')
+plt.title('Accuracy')
+plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
+plt.legend(['Training', 'Validation'], loc='upper left')
 plt.figure()
 
-plt.plot(epochs, loss, 'bo')
-plt.title('Training loss')
-plt.xlabel('Training Epochs')
+#Plot loss throughout training
+plt.plot(epochs, loss, 'b')
+plt.plot(epochs, val_loss, 'g')
+plt.title('Loss')
+plt.xlabel('Epochs')
 plt.ylabel('Loss')
+plt.legend(['Training', 'Validation'], loc='upper left')
 plt.show()
 
-print(model.summary())
+# plt.plot(epochs, d, 'bo')
+# plt.title('Training d prime')
+# plt.xlabel('Training Epochs')
+# plt.ylabel('d prime')
+# plt.show()
 
 #Save the model. Change the name depending on the date/model
-model.save('model_01_08_19_3.h5')
+model.save('model.h5')
 print('Model Saved')
