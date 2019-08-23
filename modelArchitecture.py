@@ -7,6 +7,10 @@ import keras.backend as K
 import seaborn as sn
 import matplotlib.pyplot as plt
 import h5py
+import time
+import datetime
+
+from datetime import date
 
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
@@ -27,7 +31,11 @@ from keras.layers.normalization import BatchNormalization
 from keras.optimizers import SGD
 from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
+from keras.callbacks import TensorBoard
 
+# name of model for tensorboard/saving
+name = 'model-' + str(date.today()) + '-' + str(time.localtime().tm_hour) + '-' + str(time.localtime().tm_min)
+print(name)
 
 def load_file(filepath):
     dataframe = pd.read_csv(filepath, header=None, delim_whitespace=True)
@@ -35,7 +43,7 @@ def load_file(filepath):
 
 
 # change to current OS
-operatingSystem = 'macOS'
+operatingSystem = 'windows'
 
 if operatingSystem is 'linux' or 'macOS':
     inputsPath = '/data/inputs/'
@@ -65,7 +73,7 @@ Y = yLoaded
 # use to check the balance of classes in the data
 ones = 0
 for event in Y:
-    print(event)
+    #print(event)
     if event == 1:
         ones += 1
 
@@ -120,12 +128,14 @@ model.add(Dropout(0.3))
 model.add(Dense(2, activation='softmax'))
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+# initialise callbacks
 es = EarlyStopping(monitor='val_acc', mode='max', patience=5, verbose=1, restore_best_weights=True)
+tb = TensorBoard(log_dir='logs\\' + name, histogram_freq=1, write_graph=True, write_grads=True, write_images=True)
 
 history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1,
-                    callbacks=[es])
+                    callbacks=[es,tb])
 _, accuracy = model.evaluate(xTest, yTest, batch_size=batch_size, verbose=0)
 yPred = model.predict(xTest)
 
@@ -181,6 +191,6 @@ plt.show()
 # plt.ylabel('d prime')
 # plt.show()
 
-# save the model. Change the name depending on the date/model
-model.save('model.h5')
+# save the model
+model.save(name + '.h5')
 print('Model Saved')
