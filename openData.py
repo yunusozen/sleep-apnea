@@ -11,7 +11,7 @@ from sklearn import preprocessing
 # change to current OS
 operatingSystem = 'macOS'
 
-if operatingSystem is 'linux' or 'macOS':
+if operatingSystem is 'linux' or operatingSystem is 'macOS':
     dataPath = '/data/mit-bih-polysomnographic-database-1.0.0/'
     inputsPath = '/data/inputs/'
     targetsPath = '/data/targets/'

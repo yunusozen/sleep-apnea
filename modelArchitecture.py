@@ -45,7 +45,7 @@ def load_file(filepath):
 # change to current OS
 operatingSystem = 'windows'
 
-if operatingSystem is 'linux' or 'macOS':
+if operatingSystem is 'linux' or operatingSystem is 'macOS':
     inputsPath = '/data/inputs/'
     targetsPath = '/data/targets/'
 else:
