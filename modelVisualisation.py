@@ -2,22 +2,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fft
 from keras.models import load_model
+from keras.utils.vis_utils import plot_model
+import os
 
-model = load_model('model.h5')
+
+model = load_model('models\\model-09-08-19-2.h5')
 
 # look at model summary to see shapes between layers etc.
 model.summary()
 
+
 # summarize filter shapes
 for layer in model.layers:
-	# only want conv layers (for now)
-	if 'conv' not in layer.name:
-		continue
-	# get filter weights
-	filters, biases = layer.get_weights()
-	print(layer.name, filters.shape)
+    # only want conv layers (for now)
+    if 'conv' not in layer.name:
+        continue
+    # get filter weights
+    filters, biases = layer.get_weights()
+    print(layer.name, filters.shape)
 
-# visualise the filters in the first layer
+# visualise the filters in the first layer (conv layers are layers 0, 5 and 10)
 filters1, biases1 = model.layers[0].get_weights()
 for i in range(20):
     f = filters1[:, :, i]
@@ -46,10 +50,10 @@ for i in range(20):
     f = filters1[:, :, i]
     plt.subplot(10,2,(i+1))
     powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(f, Fs=Fs, mode=mode)
-    #plt.ylim(0, 30)
+    plt.ylim(0, 30)
 
 # plot a specific filter and its spectrogram
-filterNumber = 8    # change to the particular filter you want to visulaise
+filterNumber = 6    # change to the particular filter you want to visulaise
 
 f = filters1[:, :, filterNumber]
 fig, ax = plt.subplots()
@@ -64,5 +68,19 @@ plt.ylim(0, 30)
 plt.xlabel('Time (s)')
 plt.ylabel('Frequency (Hz)')
 #fig.colorbar(imageAxis)    # display colour bar (not sure if necesarry)
+plt.figure()
+
+filters2, biases2 = model.layers[5].get_weights()
+for i in range(40):
+    f = filters2[:, filterNumber, i]
+    plt.subplot(10,4,(i+1))
+    plt.plot(f)
+plt.figure()
+
+for i in range(40):
+    f = filters2[:, filterNumber, i]
+    plt.subplot(10,4,(i+1))
+    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(f, Fs=Fs, mode=mode)
+    plt.ylim(0, 30)
 
 plt.show()
