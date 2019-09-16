@@ -1,12 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sn
 from scipy.fftpack import fft
 from keras.models import load_model
 from keras.utils.vis_utils import plot_model
 import os
 
 
-model = load_model('models\\model-09-08-19-2.h5')
+model = load_model('models\\model-10-09-19-6.h5')
 
 # look at model summary to see shapes between layers etc.
 model.summary()
@@ -29,31 +31,23 @@ for i in range(20):
     plt.plot(f)
 plt.figure()
 
-# perform Fourier transforms on the filters in the first layer
-# Fs = 250
-# Ts = 1/Fs
-# for i in range(20):
-#     f = filters1[:, :, i]
-#     y = fft(f) / len(f)
-#     x = np.linspace(0, len(y), len(y))
-#     yAmp = 2*np.abs(y[0:len(y)//2])
-#     yAmp[0] = yAmp[0]/2
-#     plt.subplot(10,2,(i+1))
-#     plt.plot(x[0:len(yAmp)], yAmp)
-#     plt.xlim(0,30)
-# plt.figure()
-
-# plot spectrograms of each filter
-Fs = 250
-mode = 'psd'
+# Number of samplepoints in filters
+N1 = 125
+N2 = 50
+N3 = 10
+# sample spacing
+T = 1.0 / 250.0
 for i in range(20):
-    f = filters1[:, :, i]
+    y = filters1[:, :, i]
+    x = np.linspace(0.0, N1*T, N1)
+    yf = fft(y)
+    xf = np.linspace(0.0, 1.0/(2.0*T), N1//2)
+    yAmp = 2.0/N1 * np.abs(yf[0:N1//2])
     plt.subplot(10,2,(i+1))
-    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(f, Fs=Fs, mode=mode)
-    plt.ylim(0, 30)
-
-# plot a specific filter and its spectrogram
-filterNumber = 6    # change to the particular filter you want to visulaise
+    plt.plot(xf, yAmp)
+    plt.xlim(0,30)
+# plot a specific filter and its fourier transform
+filterNumber = 16    # change to the particular filter you want to visulaise
 
 f = filters1[:, :, filterNumber]
 fig, ax = plt.subplots()
@@ -62,14 +56,32 @@ plt.plot(f)
 plt.xlabel('Points')
 plt.ylabel('Weights')
 
+y = filters1[:, :, filterNumber]
+x = np.linspace(0.0, N1*T, N1)
+yf = fft(y)
+xf = np.linspace(0.0, 1.0/(2.0*T), N1//2)
+yAmp = 2.0/N1 * np.abs(yf[0:N1//2])
 plt.subplot(2,1,2)
-powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(f, Fs=Fs, mode=mode)
-plt.ylim(0, 30)
-plt.xlabel('Time (s)')
-plt.ylabel('Frequency (Hz)')
-#fig.colorbar(imageAxis)    # display colour bar (not sure if necesarry)
-plt.figure()
+plt.plot(xf, yAmp)
+plt.xlim(0,30)
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Amplitude')
 
+# plot heat map to visually show the fourier transform
+fig, ax = plt.subplots()
+plt.subplot(2,1,1)
+plt.plot(f)
+plt.xlabel('Points')
+plt.ylabel('Weights')
+
+plt.subplot(2,1,2)
+df = pd.DataFrame(data=yAmp, index=np.around(xf,0))
+df = df.transpose()
+ax = sn.heatmap(df, cmap='Blues', cbar=True)
+plt.xlim(0,15)
+
+plt.figure()
+# plot specific filters from the second layer
 filters2, biases2 = model.layers[5].get_weights()
 for i in range(40):
     f = filters2[:, filterNumber, i]
@@ -78,9 +90,12 @@ for i in range(40):
 plt.figure()
 
 for i in range(40):
-    f = filters2[:, filterNumber, i]
+    y = filters2[:, filterNumber, i]
+    x = np.linspace(0.0, N2*T, N2)
+    yf = fft(y)
+    xf = np.linspace(0.0, 1.0/(2.0*T), N2//2)
+    yAmp = 2.0/N2 * np.abs(yf[0:N2//2])
     plt.subplot(10,4,(i+1))
-    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(f, Fs=Fs, mode=mode)
-    plt.ylim(0, 30)
-
+    plt.plot(xf, yAmp)
+    plt.xlim(0, 30)
 plt.show()
