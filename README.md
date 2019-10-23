@@ -1,6 +1,6 @@
 # sleep-apnea
 
-Implements a convolutional neural network that takes as input 30 second single-channel EEG signals and produces as output a binary classification of whether an apnea event occurs in the signal.
+Convolutional neural network that takes as input 30 second single-channel EEG signals and produces as output a binary classification of whether an apnea event occurs in the signal. Includes implementation, validation, and example trained model.
 
 ### Prerequisites
 
