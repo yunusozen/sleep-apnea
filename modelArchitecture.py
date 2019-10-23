@@ -33,7 +33,7 @@ from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 from keras.callbacks import TensorBoard
 
-# name of model for tensorboard/saving
+# name of model for saving
 name = 'model-' + str(date.today()) + '-' + str(time.localtime().tm_hour) + '-' + str(time.localtime().tm_min)
 print(name)
 
@@ -45,7 +45,7 @@ def load_file(filepath):
 # change to current OS
 operatingSystem = 'windows'
 
-if operatingSystem is 'linux' or 'macOS':
+if operatingSystem is 'linux' or operatingSystem is 'macOS':
     inputsPath = '/data/inputs/'
     targetsPath = '/data/targets/'
 else:
@@ -73,7 +73,6 @@ Y = yLoaded
 # use to check the balance of classes in the data
 ones = 0
 for event in Y:
-    #print(event)
     if event == 1:
         ones += 1
 
@@ -93,49 +92,47 @@ xTrain, xTest, yTrain, yTest = train_test_split(xShuffle, yShuffle, test_size=0.
 
 print("Data Ready")
 
-# def dPrime(y_true, y_pred):
-#     matrix = confusion_matrix(y_true.argmax(axis=1), y_pred.argmax(axis=1))
-#     tp, fn, fp, tn = matrix.ravel()
-#     dPrime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
-#     return K.constant(dPrime)
+verbose, epochs, batch_size = 1, 50, 32
 
-verbose, epochs, batch_size = 1, 30, 32
 #CNN layers
 model = Sequential()
 
+# Convolutional Layer 1 
 model.add(Conv1D(filters=20, kernel_size=125, input_shape=(7500,1)))
 model.add(BatchNormalization())
 model.add(Activation('elu'))
-model.add(MaxPooling1D(pool_size=5))
+model.add(MaxPooling1D(pool_size=10))
 model.add(Dropout(0.3))
 
+# Convolutional Layer 2
 model.add(Conv1D(filters=40, kernel_size=50))
 model.add(BatchNormalization())
 model.add(Activation('elu'))
 model.add(MaxPooling1D(pool_size=5))
 model.add(Dropout(0.3))
 
+# Convolutional Layer 3
 model.add(Conv1D(filters=60, kernel_size=10))
 model.add(BatchNormalization())
 model.add(Activation('elu'))
 model.add(MaxPooling1D(pool_size=5))
 model.add(Dropout(0.3))
 
+# Fully Connected Layer 1
 model.add(Flatten())
-model.add(Dense(25, activation='elu')) 
+model.add(Dense(10, activation='elu')) 
 model.add(Dropout(0.3))
 
+# Fully Connected Layer 2
 model.add(Dense(2, activation='softmax'))
 
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-# initialise callbacks
-es = EarlyStopping(monitor='val_acc', mode='max', patience=5, verbose=1, restore_best_weights=True)
-tb = TensorBoard(log_dir='logs\\' + name, histogram_freq=1, write_graph=True, write_grads=True, write_images=True)
+# initialise callback
+es = EarlyStopping(monitor='val_acc', mode='max', patience=10, verbose=1, restore_best_weights=True)
 
-history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1,
-                    callbacks=[es,tb])
+history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1, callbacks=[tb, es])
 _, accuracy = model.evaluate(xTest, yTest, batch_size=batch_size, verbose=0)
 yPred = model.predict(xTest)
 
@@ -150,7 +147,7 @@ print(np.matrix(matrix))
 
 # Calculate d' from testing
 tp, fn, fp, tn = matrix.ravel()
-dprime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
+dprime = norm.ppf(tn/(tn+fp)) - norm.ppf(fn/(tp+fn))
 print('dPrime =', dprime)
 
 # generate classification report
@@ -163,33 +160,40 @@ acc = history.history['acc']
 val_acc = history.history['val_acc']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
-# d = history.history[dPrime]
 
 epochs = range(1, len(acc) + 1)
 
-# plot accuracy throughout training
-plt.plot(epochs, acc, 'b')
-plt.plot(epochs, val_acc, 'g')
+# plot accuracy throughout training (validation and training)
+plt.plot(epochs, acc, color='xkcd:azure')
+plt.plot(epochs, val_acc, color='xkcd:green')
 plt.title('Accuracy')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend(['Training', 'Validation'], loc='upper left')
 plt.figure()
 
-# plot loss throughout training
-plt.plot(epochs, loss, 'b')
-plt.plot(epochs, val_loss, 'g')
+# plot loss throughout training (validation and training)
+plt.plot(epochs, loss, color='xkcd:azure')
+plt.plot(epochs, val_loss, color='xkcd:green')
 plt.title('Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend(['Training', 'Validation'], loc='upper left')
-plt.show()
+plt.figure()
 
-# plt.plot(epochs, d, 'bo')
-# plt.title('Training d prime')
-# plt.xlabel('Training Epochs')
-# plt.ylabel('d prime')
-# plt.show()
+# plot accuracy throughout training (just training)
+plt.plot(epochs, acc, 'b')
+plt.title('Training Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.figure()
+
+# plot loss throughout training (just training)
+plt.plot(epochs, loss, 'b')
+plt.title('Training Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.show()
 
 # save the model
 model.save(name + '.h5')

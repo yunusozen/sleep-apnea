@@ -88,7 +88,7 @@ for train, test in kFold.split(X, Y):
     model.add(Conv1D(filters=20, kernel_size=125, input_shape=(7500,1)))
     model.add(BatchNormalization())
     model.add(Activation('elu'))
-    model.add(MaxPooling1D(pool_size=5))
+    model.add(MaxPooling1D(pool_size=10))
     model.add(Dropout(0.3))
 
     model.add(Conv1D(filters=40, kernel_size=50))
@@ -104,7 +104,7 @@ for train, test in kFold.split(X, Y):
     model.add(Dropout(0.3))
 
     model.add(Flatten())
-    model.add(Dense(25, activation='elu')) 
+    model.add(Dense(10, activation='elu')) 
     model.add(Dropout(0.3))
 
     model.add(Dense(2, activation='softmax'))
@@ -131,7 +131,7 @@ for train, test in kFold.split(X, Y):
 
     # Calculate d' from testing
     tp, fn, fp, tn = matrix.ravel()
-    dprime = norm.ppf(tp/(tp+fn)) - norm.ppf(tn/(tn+fp))
+    dprime = norm.ppf(tn/(tn+fp)) - norm.ppf(fn/(tp+fn))
     print('dPrime =', dprime)
     dpList.append(dprime)
 
