@@ -33,10 +33,10 @@ from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 from keras.callbacks import TensorBoard
 
-# name of model for saving
+# name of model for saving, specified by date and time of creation
 name = 'model-' + str(date.today()) + '-' + str(time.localtime().tm_hour) + '-' + str(time.localtime().tm_min)
-print(name)
 
+# loads data from a single .csv file
 def load_file(filepath):
     dataframe = pd.read_csv(filepath, header=None, delim_whitespace=True)
     return dataframe.values
@@ -52,12 +52,12 @@ else:
     inputsPath = '\\data\\inputs\\'
     targetsPath = '\\data\\targets\\'
 
-# load a list of files into a 3D array of [samples, timesteps, features]
 xLoaded = list()
 yLoaded = []
 
 print("Loading Data...")
 
+# load input and target .csv files 
 for root, dirs, files in os.walk('.' + inputsPath):
     for fileName in files:
         xData = load_file(os.getcwd() + inputsPath + fileName)
@@ -65,9 +65,8 @@ for root, dirs, files in os.walk('.' + inputsPath):
         yData = load_file(os.getcwd() + targetsPath + fileName)
         yLoaded.append(yData)
 
-# stack group so that features are the 3rd dimension
+# data loaded in
 X = np.stack(xLoaded, axis=0)
-# Y is simply an array of data
 Y = yLoaded
 
 # use to check the balance of classes in the data
@@ -80,21 +79,21 @@ print(((ones/len(Y))*100), "%")
 
 Y = np.array(Y)
 
+# change targets to one hot encoded form
 Y = to_categorical(Y)
 Y = Y.reshape(-1, 2)
 
+# shuffle data before split
 xShuffle, yShuffle = shuffle(X, Y, random_state=2)
 
-print(X.shape)
-print(Y.shape)
-
+# split inputs and targets into train and test sets
 xTrain, xTest, yTrain, yTest = train_test_split(xShuffle, yShuffle, test_size=0.2)
 
 print("Data Ready")
 
 verbose, epochs, batch_size = 1, 50, 32
 
-#CNN layers
+# initilialise model
 model = Sequential()
 
 # Convolutional Layer 1 
@@ -126,14 +125,19 @@ model.add(Dropout(0.3))
 # Fully Connected Layer 2
 model.add(Dense(2, activation='softmax'))
 
-#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+# configure model for training 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-# initialise callback
+# initialise early stopping callback
 es = EarlyStopping(monitor='val_acc', mode='max', patience=10, verbose=1, restore_best_weights=True)
 
-history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1, callbacks=[tb, es])
+# train model
+history = model.fit(xTrain, yTrain, epochs=epochs, batch_size=batch_size, verbose=verbose, validation_split=0.1, callbacks=[es])
+
+# test model and return accuracy
 _, accuracy = model.evaluate(xTest, yTest, batch_size=batch_size, verbose=0)
+
+# find predictions model makes for test set
 yPred = model.predict(xTest)
 
 # calculate accuracy as a percentage
@@ -145,7 +149,7 @@ matrix = confusion_matrix(yTest.argmax(axis=1), yPred.argmax(axis=1))
 print('Confusion Matrix:')
 print(np.matrix(matrix))
 
-# Calculate d' from testing
+# calculate d' 
 tp, fn, fp, tn = matrix.ravel()
 dprime = norm.ppf(tn/(tn+fp)) - norm.ppf(fn/(tp+fn))
 print('dPrime =', dprime)

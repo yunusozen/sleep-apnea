@@ -22,19 +22,19 @@ else:
     
 recordList = wfdb.get_record_list('slpdb')
 apneaLabels = np.array(['H', 'HA','OA', 'CA', 'CAA', 'X'])
-# removed Hypopneas to test: 'H', 'HA',
 
 for recordNumber, record in enumerate(recordList):
 
-    # Read the annotations
+    # read the annotations
     annsamp = wfdb.rdann(os.getcwd() + dataPath + record, extension='st', summarize_labels=True)
     
-    # Read the data, create a Record
+    # read the data, create a Record
     sig = wfdb.rdrecord(os.getcwd() + dataPath + record, channels=[2]) 
     
+    # get physical EEG signal
     actualPSignal = sig.p_signal
     
-    # binarize data: 1 for a sleep apnea event in the epoch
+    # binarize data: 1 for a sleep apnea event, 0 for a non-apnoea event
     for idx, event in enumerate(annsamp.aux_note): 
         for x in apneaLabels:
             if x in event:
